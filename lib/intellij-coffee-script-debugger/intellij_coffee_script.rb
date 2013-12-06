@@ -4,12 +4,9 @@ require 'execjs'
 require 'coffee_script/source'
 
 module CoffeeScript
-  EngineError      = ExecJS::RuntimeError
-  CompilationError = ExecJS::ProgramError
-
   module Source
     def self.bundled_path
-      File.expand_path('coffee-script-redux.js', File.dirname(__FILE__))
+      File.expand_path('coffee-script.js', File.dirname(__FILE__))
     end
 
     def self.path
@@ -49,7 +46,7 @@ module CoffeeScript
       Source.version
     end
 
-    # Compile a Coffee Script Redux file to JavaScript
+    # Compile a Coffee Script file to JavaScript
     # or generate the source maps.
     #
     # @param [String,#read] the source string or IO
@@ -58,15 +55,38 @@ module CoffeeScript
     # @option options [String] format the output format, either `:map` or `:js`
     #
     def compile(script, options = {})
+
       script = script.read if script.respond_to?(:read)
 
-      unless options.key?(:bare)
+      if options.key?(:bare)
+      elsif options.key?(:no_wrap)
+        options[:bare] = options[:no_wrap]
+      else
         options[:bare] = false
       end
 
-      format = options[:format] == :map ? 'sourceMap' : 'js'
-      options.delete(:format)
-      Source.context.call("(function() { return root.CoffeeScript.#{ format }(root.CoffeeScript.compile(root.CoffeeScript.parse.apply(this, arguments))) })", script, options)
+      if options[:format] == :map
+        options.delete(:format)
+        options[:sourceMap] = true
+        options[:sourceFiles] = [options[:filename]]
+
+        wrapper = <<-WRAPPER
+            (function(script, options) {
+              try {
+                return CoffeeScript.compile(script, options);
+              } catch (err) {
+                if (err instanceof SyntaxError && err.location) {
+                  throw new SyntaxError([options.filename, err.location.first_line + 1, err.location.first_column + 1].join(":") + ": " + err.message)
+                } else {
+                  throw err;
+                }
+              }
+            })
+        WRAPPER
+        Source.context.call(wrapper, script, options)
+      else
+        Source.context.call("CoffeeScript.compile", script, options)
+      end
     end
   end
 end
