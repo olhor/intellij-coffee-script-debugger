@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = 'intellij-coffee-script-debugger'
 
-  s.files = Dir['README.md', 'LICENSE', 'lib/**/*.rb']
+  s.files = Dir['README.md', 'LICENSE', 'lib/**/*.rb', 'lib/**/*.js']
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.executables   = ['intellij-coffee-script-debugger']
   s.require_paths = ['lib']

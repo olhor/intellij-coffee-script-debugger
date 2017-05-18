@@ -1,0 +1,1 @@
+Gem for debugging CoffeeScript in Rails applications.
